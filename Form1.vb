@@ -210,9 +210,15 @@ Public Class Form1
     Public intControlState As Integer = 0
     Public intViewState As Integer = 0
 
-    Private Sub btnChangeControlMode_Click(sender As Object, e As EventArgs) Handles btnChangeControlMode.Click
+    'some buttons use the MouseDown events, this lets them process right clicks
 
-        intControlState = (intControlState + 1) Mod 4
+    Private Sub btnChangeControlMode_MouseDown(sender As Object, e As MouseEventArgs) Handles btnChangeControlMode.MouseDown
+
+        If e.Button = MouseButtons.Left Then
+            intControlState = (intControlState + 1) Mod 4
+        ElseIf e.Button = MouseButtons.Right Then
+            intControlState = (intControlState + 3) Mod 4 'uses +3 because if i used -1 it would be a negative number, which i dont want
+        End If
 
         Select Case intControlState
             Case 0
@@ -227,9 +233,13 @@ Public Class Form1
 
     End Sub
 
-    Private Sub btnChangeViewMode_Click(sender As Object, e As EventArgs) Handles btnChangeViewMode.Click
+    Private Sub btnChangeViewMode_MouseDown(sender As Object, e As MouseEventArgs) Handles btnChangeViewMode.MouseDown
 
-        intViewState = (intViewState + 1) Mod 5
+        If e.Button = MouseButtons.Left Then
+            intViewState = (intViewState + 1) Mod 5
+        ElseIf e.Button = MouseButtons.Right Then
+            intViewState = (intViewState + 4) Mod 5 'uses +4 because if i used -1 it would be a negative number, which i dont want
+        End If
 
         Select Case intViewState
             Case 0
@@ -301,6 +311,8 @@ Public Class Form1
     Private Sub LoadScene(ByRef File As StreamReader)
 
     End Sub
+
+
 
 #End Region
 
