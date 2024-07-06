@@ -49,18 +49,24 @@ Public Class Viewport
         Select Case intControlMode
             Case 0
                 'do nothing, values will be correct
+                blnCameraControl = False
             Case 1
                 'object key control
+                blnCameraControl = False
                 HandleObjectInput(Sender.sngTranslationX, Sender.sngTranslationY, Sender.sngTranslationZ,
                                   Sender.sngRotationX, Sender.sngRotationY, Sender.sngRotationZ,
                                   dblDeltaTime)
             Case 2
                 'camera key control
+                blnCameraControl = True
                 HandleCameraInput(Sender.sngCameraTranslationX, Sender.sngCameraTranslationY, Sender.sngCameraTranslationZ,
                                   Sender.sngCameraRotationX, Sender.sngCameraRotationY, Sender.sngCameraRotationZ,
                                   dblDeltaTime)
+                HandleMouseInput(Sender.sngCameraRotationX, Sender.sngCameraRotationY,
+                                 dblDeltaTime)
             Case 3
                 'Live Edit
+                blnCameraControl = False
         End Select
 
         vec4WorldTranslation = New Vector4(Sender.sngTranslationX, Sender.sngTranslationY, Sender.sngTranslationZ, 0)
@@ -79,9 +85,6 @@ Public Class Viewport
         Array.Copy(vec4TransformedPoints, vec4CameraTransformedPoints, vec4TransformedPoints.Length)
         vec4CameraTransformedPoints = TranslateScene(vec4CameraTransformedPoints, vec4CameraTranslation)
         vec4CameraTransformedPoints = CameraRotateScene(vec4CameraTransformedPoints, Sender.sngCameraRotationX, Sender.sngCameraRotationY, Sender.sngCameraRotationZ)
-
-        'Also rotate the light by the camera transform
-        'vec3LightDirection = CameraRotate(vec3LightDirection, Sender.sngCameraRotationX, Sender.sngCameraRotationY, Sender.sngCameraRotationZ)
 
         'draw frame
         Select Case intViewMode
@@ -321,6 +324,11 @@ Public Class Viewport
 
     End Sub
 
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'Draws debug information to the frame buffer
+    '
+    'post: debug info is drawn in the frame buffer
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Sub DrawDebug(ByRef stcCurrentScene As Form1.Scene, ByVal dblDeltaTime As Double)
 
         grphFrameBuffer.DrawString("DeltaTime: " & dblDeltaTime & "s" & vbCrLf &
@@ -383,6 +391,11 @@ Public Class Viewport
 
     End Function
 
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'calculate the normal direction of a tri
+    '
+    'post: returns a vec3 containing the normal direction
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Function CalculateNormal(ByRef vec4Points() As Vector4, ByVal vec3Tri As Vector3) As Vector3
 
         Dim vec3A As New Vector3 With {
@@ -617,6 +630,44 @@ Public Class Viewport
 
         sngRotationX = sngRotationX Mod 360
         sngRotationY = sngRotationY Mod 360
+
+    End Sub
+
+    Dim blnMouseHeld As Boolean
+    Dim blnCameraControl As Boolean
+
+    Private Sub picViewport_Click(sender As Object, e As MouseEventArgs) Handles picViewport.MouseDown
+
+        If blnCameraControl Then
+            blnMouseHeld = True
+            Cursor.Position = picViewport.PointToScreen(New Point(picViewport.Width / 2, picViewport.Height / 2))
+            Cursor.Hide()
+        End If
+
+    End Sub
+
+    Private Sub picViewport_MouseUp(sender As Object, e As MouseEventArgs) Handles picViewport.MouseUp
+
+        If blnCameraControl Then
+            blnMouseHeld = False
+            Cursor.Show()
+        End If
+
+    End Sub
+
+    Sub HandleMouseInput(ByRef sngRotationX As Single, ByRef sngRotationY As Single,
+                         ByVal dblDeltaTime As Double)
+
+        Dim pntDeltaMousePosition As Point
+
+        If blnMouseHeld Then
+            pntDeltaMousePosition = Cursor.Position - picViewport.PointToScreen(New Point(picViewport.Width / 2, picViewport.Height / 2))
+
+            sngRotationX -= 0.1 * pntDeltaMousePosition.Y
+            sngRotationY += 0.1 * pntDeltaMousePosition.X
+
+            Cursor.Position = picViewport.PointToScreen(New Point(picViewport.Width / 2, picViewport.Height / 2))
+        End If
 
     End Sub
 
