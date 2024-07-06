@@ -65,6 +65,6 @@ Sadly, both with losing the old versions and adding a new rendering mode, the nu
 
 ---
 ## TODO
-- mouse input
+- ReFac to make Scene structs into classes
 - Scene form
 - save + load system
