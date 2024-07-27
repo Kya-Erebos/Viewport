@@ -1,0 +1,14 @@
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\bin\Debug\Viewport (1.0.0) Revival.exe.config
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\bin\Debug\Viewport (1.0.0) Revival.exe
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\bin\Debug\Viewport (1.0.0) Revival.pdb
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\bin\Debug\Viewport (1.0.0) Revival.xml
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport (1.0.0) Revival.vbproj.AssemblyReference.cache
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport__1._0._0__Revival.Form1.resources
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport__1._0._0__Revival.Resources.resources
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport (1.0.0) Revival.vbproj.GenerateResource.cache
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport (1.0.0) Revival.vbproj.CoreCompileInputs.cache
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport (1.0.0) Revival.exe
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport (1.0.0) Revival.xml
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport (1.0.0) Revival.pdb
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport__1._0._0__Revival.Viewport.resources
+T:\visual studio projects\Viewport\Viewport (1.0.0) Revival\obj\Debug\Viewport__1._0._0__Revival.Control.resources
