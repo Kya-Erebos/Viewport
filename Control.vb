@@ -163,7 +163,7 @@
         Sender.sngFocalLength = Val(Me.txtFocalLength.Text)
         Sender.sngFramerate = Math.Min(Math.Max(1, Val(Me.txtFramerate.Text)), 1000)
 
-        Sender.blnForceBackCulling = blnCheckBoxes(Checkboxes.ForceBackCulling)
+        Sender.blnBackCulling = blnCheckBoxes(Checkboxes.BackCulling)
 
         If blnCheckBoxes(Checkboxes.RotateX) Then
             Sender.sngRotationX += 30 * dblDeltaTime
@@ -198,7 +198,7 @@
     End Sub
 
     Enum Checkboxes
-        ForceBackCulling
+        BackCulling
         RotateX
         RotateY
         RotateZ
@@ -214,29 +214,4 @@
 
     End Sub
 
-    Private Sub btnChangeScene_Click(sender As Object, e As EventArgs) Handles btnPreviousScene.Click, btnNextScene.Click
-
-        Dim btnChangeScene As Button = sender
-
-        If btnChangeScene.Tag = "Next" Then
-            frmForm1.intCurrentSceneIndex += 1
-        Else
-            frmForm1.intCurrentSceneIndex -= 1
-        End If
-
-        frmForm1.intCurrentSceneIndex = Math.Min(Math.Max(frmForm1.intCurrentSceneIndex, 0), frmForm1.stcSceneArray.Length - 1)
-
-    End Sub
-
-    Private Sub btnPlayback_Click(sender As Object, e As EventArgs) Handles btnPause.Click, btnPlay.Click
-
-        Dim btnPlayback As Button = sender
-
-        If btnPlayback.Tag = "Play" Then
-            frmForm1.blnUpdate = True
-        Else
-            frmForm1.blnUpdate = False
-        End If
-
-    End Sub
 End Class
