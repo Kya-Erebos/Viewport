@@ -60,19 +60,20 @@ Public Class vportEmpty 'empty object, not drawn and contains no data. has child
 
 #Region "runtime inheritance"
 
+    Protected internalParent As vportEmpty
     Property Parent As vportEmpty
         Get
-            If Not IsNothing(Parent) Then
-                Return Parent
+            If Not IsNothing(internalParent) Then
+                Return internalParent
             Else
                 Return Nothing
             End If
         End Get
         Set(value As vportEmpty)
-            If Not IsNothing(Parent) Then
-                Parent.RemoveChildren(Me)
+            If Not IsNothing(internalParent) Then
+                internalParent.RemoveChildren(Me)
             End If
-            Parent = value
+            internalParent = value
         End Set
     End Property
 
