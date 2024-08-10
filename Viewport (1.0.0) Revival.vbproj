@@ -89,7 +89,6 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ApplicationEvents.vb" />
     <Compile Include="vportLayers.vb" />
     <Compile Include="Control.Designer.vb">
       <DependentUpon>Control.vb</DependentUpon>

@@ -1,4 +1,7 @@
-﻿
+﻿Imports System.Numerics
+Imports vportLayers
+Imports vportObjects
+
 Public Class Form1
     'Kya Beaudry
     'CS10 Final - Directors Cut
@@ -34,6 +37,9 @@ Public Class Form1
     Public sngLightZ As Single = 1
 
     Public WithEvents frmViewport As Viewport
+    Dim Layer As vportNaiveDrawSolidLayer
+    Dim fauxCamera As vportEmpty
+    Dim meshA As vportModel
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles Me.Load
 

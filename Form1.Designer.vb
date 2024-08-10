@@ -139,6 +139,7 @@ Partial Class Form1
         'tmrUpdate
         '
         Me.tmrUpdate.Enabled = True
+        Me.tmrUpdate.Interval = 10
         '
         'opnFileDialog
         '

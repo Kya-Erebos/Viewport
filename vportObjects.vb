@@ -1,7 +1,16 @@
-﻿Imports System.Numerics
+﻿Imports System.Linq.Expressions
+Imports System.Numerics
+
+Public Interface IvportModelData
+    Function FetchTris() As List(Of Tri)
+    Overloads Sub PropogateTransforms()
+    Overloads Sub PropogateTransforms(ByVal vec3InputTranslation As Vector3,
+                                      ByVal vec3InputScale As Vector3,
+                                      ByVal quatInputRotation As Quaternion)
+End Interface
 
 Public Class vportEmpty 'empty object, not drawn and contains no data. has children
-
+    Implements IvportModelData
     Public Sub New(Optional ByVal vec3InitialTranslation As Vector3 = Nothing,
                    Optional ByVal vec3InitialScale As Vector3 = Nothing,
                    Optional ByVal quatInitialRotation As Quaternion = Nothing)
@@ -26,80 +35,48 @@ Public Class vportEmpty 'empty object, not drawn and contains no data. has child
 
     End Sub
 
-    Property vec3Translation As Vector3
-    Property vec3Scale As Vector3
-    Property quatRotation As Quaternion
+    Property vec3Translation As Vector3 = New Vector3(0, 0, 0)
+    Property vec3Scale As Vector3 = New Vector3(1, 1, 1)
+    Property quatRotation As Quaternion = Quaternion.CreateFromYawPitchRoll(0, 0, 0)
 
-    Property vec3PropogatedTranslation As Vector3
-    Property vec3PropogatedScale As Vector3
-    Property quatPropogatedRotation As Quaternion
+    Property vec3PropogatedTranslation As Vector3 = New Vector3(0, 0, 0)
+    Property vec3PropogatedScale As Vector3 = New Vector3(1, 1, 1)
+    Property quatPropogatedRotation As Quaternion = Quaternion.CreateFromYawPitchRoll(0, 0, 0)
 
-#Region "operators"
-    ' okay, yes these operators are a bit janky but they work and i kinda like how it feels. 
-    'also this way i shouldnt need to reimplement these for each subclass
+#Region "Transforms"
+    Public Sub Translate(ByVal vec3InputTranslation As Vector3)
+        vec3Translation += vec3InputTranslation
+    End Sub
 
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    'not a conventional operator. used to apply transforms to the object
-    '
-    'post:object's scale is modified appropiately, returns -1 if any error occurs
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Shared Operator *(ByVal left As vportEmpty, ByVal Right As Vector3) As Integer
+    Public Sub Scale(ByVal vec3InputScale As Vector3)
+        vec3Scale *= vec3InputScale
+    End Sub
 
-        Try
-            left.vec3Scale = left.vec3Scale * Right
-            Return 0
-        Catch
-            Return -1
-        End Try
+    Public Sub Rotate(ByVal quatInputRotation As Quaternion)
+        quatRotation = Quaternion.Multiply(quatRotation, quatInputRotation)
+    End Sub
 
-    End Operator
-
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    'not a conventional operator. used to apply transforms to the object
-    '
-    'post:object's translation is modified appropiately, returns -1 if any error occurs
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Shared Operator +(ByVal left As vportEmpty, ByVal Right As Vector3) As Integer
-
-        Try
-            left.vec3Translation = left.vec3Translation + Right
-            Return 0
-        Catch
-            Return -1
-        End Try
-
-    End Operator
-
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    'not a conventional operator. used to apply transforms to the object
-    '
-    'post:object's scale is modified appropiately, returns -1 if any error occurs
-    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Shared Operator *(ByVal left As vportEmpty, ByVal Right As Quaternion) As Integer
-
-        Try
-            left.quatRotation = left.quatRotation * Right
-            Return 0
-        Catch
-            Return -1
-        End Try
-
-    End Operator
 #End Region
 
 #Region "runtime inheritance"
 
     Property Parent As vportEmpty
         Get
-            Return Parent
+            If Not IsNothing(Parent) Then
+                Return Parent
+            Else
+                Return Nothing
+            End If
         End Get
         Set(value As vportEmpty)
-            Parent.RemoveChildren(Me)
+            If Not IsNothing(Parent) Then
+                Parent.RemoveChildren(Me)
+            End If
             Parent = value
         End Set
     End Property
 
-    Private Children As List(Of vportEmpty)
+    Protected Children As New List(Of vportEmpty)
 
     Public Overloads Sub AddChildren(ByRef Child As vportEmpty)
 
@@ -143,7 +120,7 @@ Public Class vportEmpty 'empty object, not drawn and contains no data. has child
 
     End Sub
 
-    Public Overloads Sub PropogateTransforms()
+    Public Overloads Sub PropogateTransforms() Implements IvportModelData.PropogateTransforms
 
         Dim intLength As Integer
         Dim intLoop As Integer
@@ -158,7 +135,7 @@ Public Class vportEmpty 'empty object, not drawn and contains no data. has child
 
     Public Overloads Sub PropogateTransforms(ByVal vec3InputTranslation As Vector3,
                                              ByVal vec3InputScale As Vector3,
-                                             ByVal quatInputRotation As Quaternion)
+                                             ByVal quatInputRotation As Quaternion) Implements IvportModelData.PropogateTransforms
 
         Dim intLength As Integer
         Dim intLoop As Integer
@@ -179,10 +156,30 @@ Public Class vportEmpty 'empty object, not drawn and contains no data. has child
 
 #End Region
 
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'returns an array of tris, all referencing their points directly
+    '
+    'post:returns an array of Tris
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Public Function FetchTris() As List(Of Tri) Implements IvportModelData.FetchTris
+
+        Dim Tris As New List(Of Tri)
+
+        For Each Child As IvportModelData In Me.Children
+            Tris.AddRange(Child.FetchTris())
+        Next Child
+
+        Return Tris
+
+    End Function
+
 End Class
 
 Public Class vportModel
     Inherits vportEmpty
+    Implements IvportModelData
+
+    Public blnIsBackCulled As Boolean = True
 
     Public Sub New(Optional ByVal vec3InitialTranslation As Vector3 = Nothing,
                    Optional ByVal vec3InitialScale As Vector3 = Nothing,
@@ -213,9 +210,162 @@ Public Class vportModel
     'just making a new draw layer subclass
 
     'each vertex of the object, defined in local space. stored as Vector3.
-    Property Vertecies() As Vector3
+    Public Vertecies As List(Of Vector3)
 
     'indices of the vertexes. stored as Vector3. 
-    Property Tris() As Vector3
+    Public vec3ReferenceTris As List(Of Vector3)
+
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'returns an array of tris, all referencing their points directly
+    '
+    'post:returns an array of Tris
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Public Overloads Function FetchTris() As List(Of Tri) Implements IvportModelData.FetchTris
+
+        Dim lambdaTransform As Func(Of Vector3, Vector3) = Function(ByVal vec3Input As Vector3) As Vector3
+                                                               Return Vector3.Transform((Vector3.Transform(vec3Input * Me.vec3Scale, Me.quatRotation) + Me.vec3Translation) * Me.vec3PropogatedScale, Me.quatPropogatedRotation) + Me.vec3PropogatedTranslation
+                                                           End Function
+        Dim intLength As Integer
+        Dim intLoop As Integer
+        Dim Tris As New List(Of Tri)
+
+        intLength = vec3ReferenceTris.Count - 1
+
+        For intLoop = 0 To intLength
+            Tris.Add(New Tri With {.vec3A = lambdaTransform(Vertecies(vec3ReferenceTris(intLoop).X)),
+                                   .vec3B = lambdaTransform(Vertecies(vec3ReferenceTris(intLoop).Y)),
+                                   .vec3C = lambdaTransform(Vertecies(vec3ReferenceTris(intLoop).Z)),
+                                   .blnBackCulled = Me.blnIsBackCulled})
+        Next intLoop
+
+        For Each Child As IvportModelData In Me.Children
+            Tris.AddRange(Child.FetchTris())
+        Next Child
+
+        Return Tris
+
+    End Function
 
 End Class
+
+Public Class vportCamera
+    Inherits vportEmpty
+    Implements IvportModelData
+
+    Public sngRotationX As Single = -90
+    Public sngRotationY As Single = 90
+    Public m4x4Rotation As Matrix4x4
+
+    Public Sub New(Optional ByVal vec3InitialTranslation As Vector3 = Nothing,
+                   Optional ByVal vec3InitialScale As Vector3 = Nothing,
+                   Optional ByVal quatInitialRotation As Quaternion = Nothing)
+
+        If Not IsNothing(vec3InitialTranslation) Then
+            vec3Translation = vec3InitialTranslation
+        Else
+            vec3Translation = New Vector3(0, 0, 0)
+        End If
+
+        If Not IsNothing(vec3InitialScale) Then
+            vec3Scale = vec3InitialScale
+        Else
+            vec3Scale = New Vector3(1, 1, 1)
+        End If
+
+        If Not IsNothing(quatInitialRotation) Then
+            quatRotation = quatInitialRotation
+        Else
+            quatRotation = Quaternion.CreateFromYawPitchRoll(0, 0, 0)
+        End If
+
+    End Sub
+
+    Public Overloads Sub PropogateTransforms() Implements IvportModelData.PropogateTransforms
+
+        Dim intLength As Integer
+        Dim intLoop As Integer
+
+        intLength = Me.Children.Count - 1
+
+        For intLoop = 0 To intLength
+            Me.Children(intLoop).PropogateTransforms()
+        Next intLoop
+
+    End Sub
+
+    Public Overloads Sub PropogateTransforms(ByVal vec3InputTranslation As Vector3,
+                                             ByVal vec3InputScale As Vector3,
+                                             ByVal quatInputRotation As Quaternion) Implements IvportModelData.PropogateTransforms
+        Throw New NotImplementedException("Hey, dont do this. i dont know how to make the camera not inherit this method so im doing this instead")
+    End Sub
+
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    'returns an array of tris, all referencing their points directly
+    'differs from the other objects due to operating on the other models' data 
+    '
+    'post:returns an array of Tris
+    '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Public Function FetchTris() As List(Of Tri) Implements IvportModelData.FetchTris
+
+        Dim Tris As New List(Of Tri)
+        Dim lambdaTransform As Func(Of Vector3, Vector3) = Function(ByVal vec3Input As Vector3) As Vector3
+                                                               Return Vector3.Transform(vec3Input - Me.vec3Translation, Me.m4x4Rotation) _
+                                                                      * New Vector3(1 / Me.vec3Scale.X, 1 / Me.vec3Scale.Y, 1 / Me.vec3Scale.Z)
+                                                           End Function
+        Dim intLength As Integer
+        Dim intLoop As Integer
+
+        'i did the math on paper. more optimized. grug approves. 
+        Dim sinY As Double = Math.Sin(degreeToRadian(sngRotationY))
+        Dim cosY As Double = Math.Cos(degreeToRadian(sngRotationY))
+        Dim sinX As Double = Math.Sin(degreeToRadian(sngRotationX))
+        Dim cosX As Double = Math.Cos(degreeToRadian(sngRotationX))
+        Me.m4x4Rotation = New Matrix4x4(sinY, cosY * cosX, cosY * sinX, 0,
+                                        0, -sinX, cosX, 0,
+                                        cosY, -sinY * cosX, -sinY * sinX, 0,
+                                        0, 0, 0, 1)
+
+
+        For Each Child As IvportModelData In Me.Children
+            Tris.AddRange(Child.FetchTris())
+        Next Child
+
+        If vec3Scale.X = 0 Then
+            vec3Scale = New Vector3(0.0001, vec3Scale.Y, vec3Scale.Z)
+        End If
+
+        If vec3Scale.Y = 0 Then
+            vec3Scale = New Vector3(vec3Scale.X, 0.0001, vec3Scale.Z)
+        End If
+
+        If vec3Scale.Z = 0 Then
+            vec3Scale = New Vector3(vec3Scale.X, vec3Scale.Y, 0.0001)
+        End If
+
+        intLength = Tris.Count - 1
+
+        For intLoop = 0 To intLength
+            Tris(intLoop) = New Tri With {.vec3A = lambdaTransform(Tris(intLoop).vec3A),
+                                          .vec3B = lambdaTransform(Tris(intLoop).vec3B),
+                                          .vec3C = lambdaTransform(Tris(intLoop).vec3C),
+                                          .blnBackCulled = Tris(intLoop).blnBackCulled}
+        Next intLoop
+
+        Return Tris
+
+    End Function
+
+    Function degreeToRadian(ByVal dblDegrees As Double) As Double
+        Return dblDegrees * Math.PI / 180
+    End Function
+
+End Class
+
+Public Structure Tri
+    Dim vec3A As Vector3
+    Dim vec3B As Vector3
+    Dim vec3C As Vector3
+    Dim blnBackCulled As Boolean
+End Structure
+
+
